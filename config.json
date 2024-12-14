@@ -1,24 +1,22 @@
 {
     "General": {
         "FLOW_TIMEOUT_SECONDS": 120,
-        "OPERATION_MODE": "ONLINE",
-        "OFFLINE_PCAP_FILES": [],
+        "OPERATION_MODE": "OFFLINE",
+        "OFFLINE_PCAP_FILES": ["one.pcap"],
         "OUTPUT_KAFKA": true,
-        "ONLINE_CAPTURE_INTERFACE": "ens19",
+        "ONLINE_CAPTURE_INTERFACE": "enp0s3",
         "ONLINE_CAPTURE_DURATION": "30s",
-        "ONLINE_CAPTURE_PORTS_WHITELIST": [80],
+        "ONLINE_CAPTURE_PORTS_WHITELIST": ["80"]
     },
     "Kafka": {
-        "KAFKA_HOST": "***",
+        "KAFKA_HOST": "kafka.***.***",
         "KAFKA_PORT": 9092,
-        "KAFKA_TOPIC_OCPPFLOWMETER": "uc1.ocppflowmeter.flows",
-        "KAFKA_TOPIC_CICFLOWMETER": "uc1.cicflowmeter.flows",
+        "KAFKA_TOPIC_CICFLOWMETER": "***",
         "KAFKA_SECURITY": "SASL_PLAINTEXT",
 	    "KAFKA_SASL_USERNAME": "***",
 	    "KAFKA_SASL_PASSWORD": "***",
         "KAFKA_CA": "./kafka_certs/CA.pem",
         "KAFKA_CERT": "./kafka_certs/cert.pem",
-        "KAFKA_KEY": "./kafka_certs/key.pem",
-        "KAFKA_PASSWORD": "***"
+        "KAFKA_KEY": "./kafka_certs/key.pem"
     }
 }
