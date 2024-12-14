@@ -1,0 +1,70 @@
+import pyshark
+from confluent_kafka import Producer
+import json
+
+# Configuration for Kafka Producer
+KAFKA_BROKER = 'localhost:9092'  # Replace with your Kafka broker address
+KAFKA_TOPIC = 'network_traffic'
+
+# Function to parse packet and extract required fields
+def parse_packet(packet):
+    try:
+        parsed_data = {
+            "timestamp": str(packet.sniff_time),
+            "protocol": packet.highest_layer,
+            "src_ip": packet.ip.src if hasattr(packet, 'ip') else None,
+            "dst_ip": packet.ip.dst if hasattr(packet, 'ip') else None,
+            "src_port": packet.tcp.srcport if hasattr(packet, 'tcp') else (
+                packet.udp.srcport if hasattr(packet, 'udp') else None
+            ),
+            "dst_port": packet.tcp.dstport if hasattr(packet, 'tcp') else (
+                packet.udp.dstport if hasattr(packet, 'udp') else None
+            ),
+            "length": packet.length if hasattr(packet, 'length') else None,
+            "tcp_flags": packet.tcp.flags if hasattr(packet, 'tcp') else None,
+            "payload_size": len(packet.tcp.payload.binary_value) if hasattr(packet.tcp, 'payload') else None,
+        }
+        return parsed_data
+    except Exception as e:
+        print(f"Error parsing packet: {e}")
+        return None
+
+# Kafka producer delivery report callback
+def delivery_report(err, msg):
+    if err is not None:
+        print(f"Delivery failed for record {msg.key()}: {err}")
+    else:
+        print(f"Record successfully produced to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
+
+# Kafka Producer initialization
+producer = Producer({'bootstrap.servers': KAFKA_BROKER})
+
+def main():
+    try:
+        # Capture live traffic using PyShark
+        capture = pyshark.LiveCapture(interface='eth0')  # Replace 'eth0' with your network interface
+        print("Starting capture...")
+
+        for packet in capture.sniff_continuously():
+            parsed_packet = parse_packet(packet)
+            if parsed_packet:
+                # Convert parsed data to JSON
+                json_data = json.dumps(parsed_packet)
+                # Send JSON data to Kafka topic
+                producer.produce(
+                    KAFKA_TOPIC,
+                    key=str(parsed_packet.get("timestamp")),
+                    value=json_data,
+                    callback=delivery_report
+                )
+                producer.flush()  # Ensure delivery
+
+    except KeyboardInterrupt:
+        print("Capture stopped by user.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        producer.close()
+
+if __name__ == "__main__":
+    main()
